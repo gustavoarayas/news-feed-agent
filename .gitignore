@@ -1,0 +1,6 @@
+context.md
+*.env
+.env*
+__pycache__/
+*.pyc
+lambda.zip
