@@ -21,7 +21,7 @@ jobs:
           aws-region: us-east-1
 
       - name: Zip Lambda function
-        run: zip lambda.zip lambda_agent.py
+        run: zip lambda.zip lambda_function.py
 
       - name: Deploy to AWS Lambda
         run: |
