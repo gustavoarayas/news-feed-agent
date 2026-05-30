@@ -31,8 +31,8 @@ jobs:
 
       - name: Configure Lambda (timeout + memory)
         run: |
-          aws lambda wait function-updated \
-            --function-name News-Agent_Practices2026
+          # Brief pause for code update to propagate (avoids ResourceConflictException)
+          sleep 5
           aws lambda update-function-configuration \
             --function-name News-Agent_Practices2026 \
             --timeout 900 \
