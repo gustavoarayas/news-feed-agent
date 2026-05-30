@@ -28,3 +28,13 @@ jobs:
           aws lambda update-function-code \
             --function-name News-Agent_Practices2026 \
             --zip-file fileb://lambda.zip
+
+      - name: Configure Lambda (timeout + memory)
+        run: |
+          # Wait for code update to propagate before changing config
+          aws lambda wait function-updated \
+            --function-name News-Agent_Practices2026
+          aws lambda update-function-configuration \
+            --function-name News-Agent_Practices2026 \
+            --timeout 900 \
+            --memory-size 512

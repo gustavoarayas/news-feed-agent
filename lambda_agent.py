@@ -49,8 +49,15 @@ def search_serper(query, serper_key):
             'Content-Type': 'application/json'
         }
     )
-    with urllib.request.urlopen(req) as r:
-        results = json.loads(r.read().decode('utf-8'))
+    try:
+        with urllib.request.urlopen(req, timeout=15) as r:
+            results = json.loads(r.read().decode('utf-8'))
+    except urllib.error.HTTPError as e:
+        print(f"[agent] Serper HTTP error {e.code}: {e.read().decode('utf-8')[:200]}")
+        return f"Search failed (HTTP {e.code}) — skipping this query."
+    except Exception as e:
+        print(f"[agent] Serper error: {e}")
+        return "Search unavailable — skipping this query."
 
     lines = []
     for item in results.get('organic', [])[:5]:
@@ -149,13 +156,14 @@ def call_claude_with_tools(system_prompt, messages, tools, api_key):
         )
 
         # Retry with exponential backoff on 429
+        # Cap wait at 20s to avoid burning Lambda timeout budget
         for attempt in range(4):
             try:
-                with urllib.request.urlopen(req) as r:
+                with urllib.request.urlopen(req, timeout=60) as r:
                     return json.loads(r.read().decode('utf-8'))
             except urllib.error.HTTPError as e:
                 if e.code == 429:
-                    wait = 30 * (attempt + 1)  # 30s, 60s, 90s, 120s
+                    wait = min(20 * (attempt + 1), 60)  # 20s, 40s, 60s, 60s max
                     print(f"[agent] Rate limit (429) — waiting {wait}s (attempt {attempt + 1}/4)")
                     time.sleep(wait)
                 else:
@@ -230,7 +238,7 @@ def compact_messages(messages, system_prompt, api_key):
     )
 
     try:
-        with urllib.request.urlopen(req) as r:
+        with urllib.request.urlopen(req, timeout=30) as r:
             summary = json.loads(r.read().decode('utf-8'))['content'][0]['text']
         print(f"[agent] Context compacted: {len(to_summarise)} messages → 1 summary block")
         compacted = [{"role": "user", "content": f"[Previous session summary]\n{summary}"}]
