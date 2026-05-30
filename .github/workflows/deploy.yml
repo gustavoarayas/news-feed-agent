@@ -20,5 +20,5 @@ jobs:
           AWS_DEFAULT_REGION: us-east-1
         run: |
           aws lambda update-function-code \
-            --function-name news-feed-agent \
+            --function-name News-Agent_Practices2026 \
             --zip-file fileb://lambda.zip
