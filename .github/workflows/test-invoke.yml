@@ -1,0 +1,26 @@
+name: Test Invoke
+
+on:
+  workflow_dispatch:
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  invoke:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::063474957549:role/github-actions-news-feed-role
+          aws-region: us-east-1
+
+      - name: Invoke Lambda (async)
+        run: |
+          aws lambda invoke \
+            --function-name News-Agent_Practices2026 \
+            --invocation-type Event \
+            response.json
+          echo "Async invoke accepted — digest will arrive by email in a few minutes."
