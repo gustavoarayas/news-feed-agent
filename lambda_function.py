@@ -7,7 +7,7 @@ from datetime import datetime, timedelta
 
 BUCKET = '2026-practices-agents'
 FOLDER = 'News-Agent'
-MAX_ITERATIONS = 15
+MAX_ITERATIONS = 20  # 7 coverage areas need more search turns
 COMPACTION_THRESHOLD = 10  # compact after this many message pairs
 
 
@@ -61,7 +61,13 @@ def search_serper(query, serper_key):
 
     lines = []
     for item in results.get('organic', [])[:5]:
-        lines.append(f"- {item.get('title', '')}: {item.get('snippet', '')}")
+        title = item.get('title', '')
+        snippet = item.get('snippet', '')
+        url = item.get('link', '')
+        if url:
+            lines.append(f"- [{title}]({url}): {snippet}")
+        else:
+            lines.append(f"- {title}: {snippet}")
     return "\n".join(lines) if lines else "No results found."
 
 
@@ -137,7 +143,7 @@ def call_claude_with_tools(system_prompt, messages, tools, api_key):
 
     def _call(msgs):
         data = json.dumps({
-            "model": "claude-sonnet-4-6",
+            "model": "claude-fable-5",
             "max_tokens": 8000,          # was 2000 — raised to prevent truncation
             "system": cached_system,
             "tools": cached_tools,
@@ -318,26 +324,36 @@ Instructions:
    - STRONG: directly relevant, recent (within 7 days), specific details
    - WEAK: generic, old, off-topic, or a listicle with no substance
 3. If a search returns weak results, refine the query and search again.
-4. Cover these areas: AI/Agentic AI tools, FinTech & identity/KYC/fraud AI, Engineering leadership, Australia/NZ/SG tech, anything else notable.
-5. When satisfied with coverage, call write_and_send with a well-formatted markdown digest.
-6. Then call done().
+4. Cover ALL of these areas, search at least one query per area:
+   - Agentic AI & new model releases (Anthropic, OpenAI, Google)
+   - Cybersecurity: threat intelligence, supply chain attacks, SDLC security, tooling (Wiz, Aikido, Netskope, SAST, SIEM)
+   - Digital identity: KYC, IDV, biometrics, fraud detection, TDIF, IDSP, Digital ID Act 2024, AU/UK frameworks
+   - Regulation & compliance: AML/CTF, AUSTRAC, open banking, fintech compliance in Australia and key markets
+   - EU data sovereignty: GDPR enforcement, EU AI Act, data residency, cross-border transfer rulings (Schrems II, adequacy decisions)
+   - AI-native software delivery: agentic coding, AI in the SDLC, engineering productivity research
+   - Australian fintech and regtech industry news
+5. Relevance bar is HIGH: skip generic tech news, listicles, and anything not directly tied to these areas. Fewer strong bullets beat many weak ones.
+6. When satisfied with coverage, call write_and_send with a well-formatted markdown digest.
+7. Then call done().
 
 CRITICAL — link rules:
-- Every single bullet MUST include the article URL as a markdown link: [Article Title](https://...)
+- The search tool returns results already formatted as markdown links: [Title](url)
+- Copy those links directly into your digest — do not rewrite or fabricate URLs
+- Every single bullet MUST include the article URL as a markdown link: **[Article Title](url)**
 - Never write a bullet without a source link. If you don't have the URL, skip that bullet.
-- Format: **[Article Title](https://...)** — one sentence summary.
 
 Digest format:
 ## 🔍 Topics Researched
 (list all queries used)
 
-## 🤖 Agentic AI & Tools
-## 🏦 FinTech, Identity & Fraud AI
-## 👥 Engineering Leadership
-## 🇦🇺 Australia / NZ / Singapore Tech
-## 📌 Anything Else Worth Noting
+## 🤖 Agentic AI & Models
+## 🔒 Cybersecurity
+## 🪪 Digital Identity & Fraud
+## ⚖️ Regulation & Compliance
+## 🚀 AI-Native Software Delivery
+## 🇦🇺 Australian FinTech & RegTech
 
-2-3 bullets per section. Format: **[Title](url)** — one sentence summary."""
+2-3 bullets per section. Format: **[Title](url)** — one sentence summary. Omit a section only if nothing strong was found, and say so."""
 
     messages = [{"role": "user", "content": "Please research and produce today's news digest."}]
 
