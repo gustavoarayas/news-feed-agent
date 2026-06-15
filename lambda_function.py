@@ -143,7 +143,7 @@ def call_claude_with_tools(system_prompt, messages, tools, api_key):
 
     def _call(msgs):
         data = json.dumps({
-            "model": "claude-fable-5",
+            "model": "claude-sonnet-4-6",
             "max_tokens": 8000,          # was 2000 — raised to prevent truncation
             "system": cached_system,
             "tools": cached_tools,
